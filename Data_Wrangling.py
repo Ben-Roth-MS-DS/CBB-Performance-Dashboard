@@ -20,6 +20,9 @@ import os
 import pandas as pd
 import numpy as np
 import pysbr
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+from  itertools import product
 from datetime import datetime
 from datetime import timedelta
 from selenium import webdriver
@@ -155,6 +158,9 @@ torv_df = pd.DataFrame({'Home': home_torv,
                         'Torv_Away_Points': away_scores,
                         'Torv_Line': line_torv})
 
+#close driver
+driver.close()
+
 #define sportsbooks and ncaab
 ncaab = pysbr.NCAAB()
 sb = pysbr.Sportsbook()
@@ -167,7 +173,7 @@ games = pysbr.EventsByDate(ncaab.league_id, datetime.strptime(today, '%Y-%m-%d')
 #create lookup table that matches team id to name
 teams_lookup = pd.DataFrame(ncaab.league_config()['teams'])
 
-teams_lookup['full name'] = teams_lookup.name + teams_lookup.nickname
+teams_lookup['full name'] = teams_lookup.name + ' '  + teams_lookup.nickname
 
 connected = False
 while not connected:
@@ -208,7 +214,6 @@ bovada_ps_sub_df.columns = ['event id', 'datetime', 'participant full name', 'Aw
 bovada_final = pd.merge(left = bovada_ps_sub_df,
                         right = bovada_ou_sub_df,
                         on = 'event id')
-
 
 
 connected = False
@@ -254,7 +259,6 @@ bet365_final = pd.merge(left = bet365_ps_sub_df,
 lines_final = pd.merge(left = bet365_final,
                        right = bovada_final,
                        on = ['event id', 'participant full name', 'Away Team', 'Home Team'])
-
 
 #save dfs
 lines_final.to_csv('./Data/lines_' + str(today) + '.csv', index = False)
