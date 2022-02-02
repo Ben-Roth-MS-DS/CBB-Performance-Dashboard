@@ -62,7 +62,7 @@ lines_final['Away Team'] = lines_final.apply(lambda x: x['Away Team'].replace(st
 lines_final = lines_final[[column for column in lines_final.columns if column not in teams_lookup.columns]]
 
 
-N = 80
+N = 70
 
 #create mapping for home and away teams
 
@@ -138,17 +138,76 @@ away_final2.columns = ['Merged Away', 'Hasla Away', 'Fuzzy Away Pct']
 away_final2.sort_values(by = 'Fuzzy Away Pct', ascending = False, inplace = True)
 away_final2['Merged Away'] = away_final2['Merged Away'].str.strip()
 
+#remove potential duplicates
+away_final2 = away_final2.sort_values('Fuzzy Away Pct', ascending = False).\
+              drop_duplicates(subset = 'Merged Away').\
+              reset_index(drop = True)
+            
+home_final2 = home_final2.sort_values('Fuzzy Home Pct', ascending = False).\
+              drop_duplicates(subset = 'Merged Home').\
+              reset_index(drop = True)            
+
 
 #join mappings to torv_lines and hasla
-lines_torv_merge = pd.merge(lines_torv_merge, home_final2, left_on = 'Home', right_on = 'Merged Home', how = 'right')
+lines_torv_merge = pd.merge(lines_torv_merge, home_final2, left_on = 'Home', right_on = 'Merged Home')
 lines_torv_merge = pd.merge(lines_torv_merge, away_final2, left_on = 'Away', right_on = 'Merged Away')
 
-hasla_df = pd.merge(hasla_df, home_final2, left_on = 'Home', right_on = 'Merged Home', how  = 'left')
-hasla_df = pd.merge(hasla_df, away_final2, left_on = 'Away', right_on = 'Hasla Away', how = 'left')
+##deal with hasla nonsense##
+hasla_home_df1 = pd.merge(hasla_df, home_final2, left_on = 'Home', right_on = 'Hasla Home')
+hasla_home_df2 = pd.merge(hasla_df, away_final2, left_on = 'Home', right_on = 'Hasla Away')
+
+hasla_away_df1 = pd.merge(hasla_df, away_final2, left_on = 'Away', right_on = 'Hasla Away')
+hasla_away_df2 = pd.merge(hasla_df, home_final2, left_on = 'Away', right_on = 'Hasla Home')
+
+#rename columns in df2 to accurately reflect home/away team
+hasla_home_df2.columns = ['Away', 'Home', 'Hasla_Away_Points', 'Hasla_Home_Points', 'Hasla_Away_Rank', 'Hasla_Home_Rank','Merged Away', 'Hasla Away', 'Fuzzy Away Pct']
+hasla_away_df2.columns = ['Away', 'Home', 'Hasla_Away_Points', 'Hasla_Home_Points', 'Hasla_Away_Rank', 'Hasla_Home_Rank','Merged Home', 'Hasla Home', 'Fuzzy Home Pct']
+
+#create singular home/away dataframes
+hasla_home_df = pd.concat([hasla_home_df1, hasla_away_df2[hasla_home_df1.columns]], axis = 0).reset_index(drop = True)
+hasla_away_df = pd.concat([hasla_away_df1, hasla_home_df2[hasla_away_df1.columns]], axis = 0).reset_index(drop = True)
+
+#create final hasla df 
+hasla_final_df = pd.merge(hasla_home_df, 
+                          hasla_away_df,
+                          on = ['Away', 'Home', 'Hasla_Away_Points', 'Hasla_Home_Points', 'Hasla_Away_Rank', 'Hasla_Home_Rank'])
+
+#adjust columns so that they accurately reflect home/away teams
 
 #hasla and torv_lines
 final_df = pd.merge(lines_torv_merge, 
-                    hasla_df, 
+                    hasla_final_df, 
                     left_on = ['Hasla Home', 'Hasla Away'], 
                     right_on = ['Hasla Home', 'Hasla Away'])
+
+
+#choose final columns
+final_df_sub = final_df[['Lines Home_x', 'Lines Away_x', 'Torv_Home_Points', 'Torv_Away_Points', 'Torv_Line',
+                         'event id', 'Home Spread Bet354', 'total bet365',  'datetime', 
+                         'Home Spread Bovada', 'total bovada',  'Hasla_Home_Points', 'Hasla_Away_Points']]
+
+#rename final columns
+final_df_sub.columns = ['Home', 'Away', 'Home_Points_Torv', 'Away_Points_Torv', 'Line_Torv',
+                        'event_id', 'Home_Spread_Bet365', 'Total_Bet365', 'Date',
+                        'Home_Spread_Bovada', 'Totaal_Bovada', 'Hasla_Home_Points',
+                        'Hasla_Away_Points']
+
+#final manipulations
+final_df_sub['Line_Torv'] = np.where(#conditional
+                                     final_df_sub.Home_Points_Torv > final_df_sub.Away_Points_Torv,
+                                     #if true
+                                     final_df_sub.Line_Torv * -1,
+                                     #else false
+                                     final_df_sub.Line_Torv)
+
+final_df_sub['Lines_Hasla'] = final_df_sub['Hasla_Away_Points'] - final_df_sub['Hasla_Home_Points']
+
+final_df_sub['Date'] = [dt[:10] for dt in final_df_sub.Date.values]
+
+#save df
+final_df_sub.to_csv('./Data/merged_' + today + '.csv', index = False)
+
+
+
+
 
