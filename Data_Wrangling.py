@@ -191,25 +191,26 @@ while not connected:
         pass
 
 bovada_ou_lines_df = pd.DataFrame(bovada_lines_ou.list(games))
-
 bovada_ou_lines_df['Away Team'] = [away.split('@')[0] for away in bovada_ou_lines_df.event.values]
 bovada_ou_lines_df['Home Team'] = [home.split('@')[1] for home in bovada_ou_lines_df.event.values]
-bovada_ou_lines_df.drop_duplicates(subset = ['event id'], inplace = True)
+bovada_ou_lines_df = bovada_ou_lines_df.sort_values('datetime', ascending = False).\
+                   drop_duplicates(subset = ['event id'])
 
 
 bovada_ps_lines_df = pd.DataFrame(bovada_lines_ps.list(games))
 bovada_ps_lines_df['Away Team'] = [away.split('@')[0] for away in bovada_ps_lines_df.event.values]
 bovada_ps_lines_df['Home Team'] = [home.split('@')[1] for home in bovada_ps_lines_df.event.values]
-bovada_ps_lines_df = bovada_ps_lines_df.loc[bovada_ps_lines_df['participant full name'] == bovada_ps_lines_df['Home Team'],]
-bovada_ps_lines_df.drop_duplicates(subset = ['event id'], inplace = True)
+bovada_ps_lines_df = bovada_ps_lines_df.dropna(subset = ['participant full name'])
+bovada_ps_lines_df = bovada_ps_lines_df.sort_values('datetime', ascending = False).\
+                   drop_duplicates(subset = ['event id'])
 
 bovada_ou_sub_df = bovada_ou_lines_df[['event id', 'spread / total']]
 bovada_ou_sub_df.columns = ['event id', 'total bovada']
 
-bovada_ps_sub_df = bovada_ps_lines_df[['event id', 'datetime', 'participant full name', 'Away Team',
+bovada_ps_sub_df = bovada_ps_lines_df[['event id', 'participant full name', 'Away Team',
        'Home Team', 'spread / total']]
-bovada_ps_sub_df.columns = ['event id', 'datetime', 'participant full name', 'Away Team',
-       'Home Team', 'Home Spread Bovada']
+bovada_ps_sub_df.columns = ['event id', 'participant full name', 'Away Team',
+       'Home Team', 'Home Spread Bet354']
 
 bovada_final = pd.merge(left = bovada_ps_sub_df,
                         right = bovada_ou_sub_df,
@@ -230,19 +231,20 @@ while not connected:
         connected = True
     except:
         pass
-
+    
 bet365_ou_lines_df = pd.DataFrame(bet365_lines_ou.list(games))
-
 bet365_ou_lines_df['Away Team'] = [away.split('@')[0] for away in bet365_ou_lines_df.event.values]
 bet365_ou_lines_df['Home Team'] = [home.split('@')[1] for home in bet365_ou_lines_df.event.values]
-bet365_ou_lines_df.drop_duplicates(subset = ['event id'], inplace = True)
+bet365_ou_lines_df = bet365_ou_lines_df.sort_values('datetime', ascending = False).\
+                   drop_duplicates(subset = ['event id'])
 
 
 bet365_ps_lines_df = pd.DataFrame(bet365_lines_ps.list(games))
 bet365_ps_lines_df['Away Team'] = [away.split('@')[0] for away in bet365_ps_lines_df.event.values]
 bet365_ps_lines_df['Home Team'] = [home.split('@')[1] for home in bet365_ps_lines_df.event.values]
-bet365_ps_lines_df = bet365_ps_lines_df.loc[bet365_ps_lines_df['participant full name'] == bet365_ps_lines_df['Home Team'],]
-bet365_ps_lines_df.drop_duplicates(subset = ['event id'], inplace = True)
+bet365_ps_lines_df = bet365_ps_lines_df.dropna(subset = ['participant full name'])
+bet365_ps_lines_df = bet365_ps_lines_df.sort_values('datetime', ascending = False).\
+                   drop_duplicates(subset = ['event id'])
 
 bet365_ou_sub_df = bet365_ou_lines_df[['event id', 'spread / total']]
 bet365_ou_sub_df.columns = ['event id', 'total bet365']
