@@ -140,6 +140,15 @@ away_torv = torvick_values_clean[::3]
 home_torv = torvick_values_clean[1::3]
 lines_torv = torvick_values_clean[2::3]
 
+#drop games with no lines
+no_lines = [line.split(' (')[0] for line in lines_torv if '-' not in line]
+lines_torv = [line for line in lines_torv if '-' in line]
+
+home_torv = [team for team in home_torv if team not in no_lines]
+away_torv = away_torv[:len(home_torv)]
+
+
+
 #break lines into favorite, line, favorite score, underdog score
 favorite_torv = [line.split(' -', 1)[0] for line in lines_torv]
 line_torv = [line.partition('\n')[0].split(' -', 1)[1] for line in lines_torv]
@@ -210,7 +219,7 @@ bovada_ou_sub_df.columns = ['event id', 'total bovada']
 bovada_ps_sub_df = bovada_ps_lines_df[['event id', 'participant full name', 'Away Team',
        'Home Team', 'spread / total']]
 bovada_ps_sub_df.columns = ['event id', 'participant full name', 'Away Team',
-       'Home Team', 'Home Spread Bet354']
+       'Home Team', 'Home Spread Bovada']
 
 bovada_final = pd.merge(left = bovada_ps_sub_df,
                         right = bovada_ou_sub_df,
@@ -266,4 +275,11 @@ lines_final = pd.merge(left = bet365_final,
 lines_final.to_csv('./Data/lines_' + str(today) + '.csv', index = False)
 torv_df.to_csv('./Data/torvick_' + str(today) + '.csv', index = False)
 hasla_df.to_csv('./Data/hasla_' + str(today) + '.csv', index = False)
+
+test = pd.read_html('https://www.oddstrader.com/ncaa-college-basketball/?date=20220211', 
+                    flavor = 'bs4')[1]
+
+
+
+
 
